@@ -1,0 +1,21 @@
+// RGB to HSL
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+    const float Mx = _fmaxf(p_R, _fmaxf(p_G, p_B));			
+    const float mn = _fminf(p_R, _fminf(p_G, p_B));					
+    const float C = (Mx) - (mn);																
+    const float L = 0.5f * ((Mx) + (mn));													
+    const float S = (C) == 0.0f ? 0.0f : (C) / (1.0f - (2.0f * (L) - 1.0f));	
+    
+    const float H = ((Mx) == p_R ? ((p_G - p_B) / (C))  
+    + (p_G < p_B ? 6.0f : 0.0f) : ((Mx) == 
+    p_G ? 2.0f + ((p_B - p_R) / (C)) : 4.0f + ((p_R
+    - p_G) / (C)))) / 6.0f;
+    
+    const float r = (H);
+    const float g = (S);
+    const float b = (L);
+    
+    return make_float3(r, g, b);
+}

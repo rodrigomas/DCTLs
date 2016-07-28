@@ -1,0 +1,42 @@
+// HSL to RGB
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+
+    const float h = p_R;
+    const float s = p_G;
+    const float l = p_B;
+ 
+    const float q = ((l) < 0.5f) ? ((l) * (1.0f + (s))) : ((l) + (s) - (l) * (s));
+    const float p = (2.0f * (l) - (q));
+
+    const float rh = (((h) + 1.0f / 3.0f) < 0.0f) ? (((h) + 1.0f / 3.0f) + 1.0f) :
+    ((((h) + 1.0f / 3.0f) > 1.0f) ? (((h) + 1.0f / 3.0f) - 1.0f) : ((h) + 1.0f / 3.0f));
+    
+    const float rr = ((rh) < 1.0f / 6.0f) ? ((p) + ((q) - (p)) * 6.0f * (rh)) : 
+    (((rh) < 1.0f / 2.0f) ? (q) : (((rh) < 2.0f / 3.0f) 
+    ? ((p) + ((q) - (p)) * (2.0f / 3.0f - (rh)) * 6.0f) : (p)));
+
+    const float gh = ((h) < 0.0f) ? ((h) + 1.0f) :
+    (((h) > 1.0f) ? ((h) - 1.0f) : (h));
+
+    const float gg = ((gh) < 1.0f / 6.0f) ? ((p) + ((q) - (p)) * 6.0f * (gh)) :
+    (((gh) < 1.0f / 2.0f) ? (q) :
+    (((gh) < 2.0f / 3.0f) ? ((p) + ((q) - (p)) * (2.0f / 3.0f - (gh)) * 6.0f) : (p)));
+
+    const float bh = (((h) - 1.0f / 3.0f) < 0.0f) ? (((h) - 1.0f / 3.0f) + 1.0f) :
+    ((((h) - 1.0f / 3.0f) > 1.0f) ? (((h) - 1.0f / 3.0f) - 1.0f) : ((h) - 1.0f / 3.0f));
+    
+    const float bb = ((bh) < 1.0f / 6.0f) ? ((p) + ((q) - (p)) * 6.0f * (bh)) :
+    (((bh) < 1.0f / 2.0f) ? (q) :
+    (((bh) < 2.0f / 3.0f) ? ((p) + ((q) - (p)) * (2.0f / 3.0f - (bh)) * 6.0f) : (p)));
+    
+    
+    const float r = (s) == 0.0f ? (l) : (rr);
+    const float g = (s) == 0.0f ? (l) : (gg);
+    const float b = (s) == 0.0f ? (l) : (bb);
+
+    
+   return make_float3(r, g, b);
+
+}
