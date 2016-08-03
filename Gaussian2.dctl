@@ -1,3 +1,4 @@
+// Gaussian Blur
 // Resolution: 3x3
 // Sigma^2 = 1
 
@@ -21,9 +22,9 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, __TEXTU
     const float B = b / N;
     const float C = c / N;
 
-    const float Gaus[9] = {C, B, C,
-        			       B, A, B,
-        			       C, B, C};
+    const float Gaus[9] =  {C, B, C,
+							B, A, B,
+							C, B, C};
 
     
     float3 result; 
