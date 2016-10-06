@@ -1,0 +1,109 @@
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+    // LogC to Lin
+
+    const float lr = p_R > 0.1496582f ? (_powf(10.0f, (p_R - 0.385537f) / 0.2471896f) - 0.052272f) / 5.555556f : (p_R - 0.092809f) / 5.367655f;
+    
+    const float lg = p_G > 0.1496582f ? (_powf(10.0f, (p_G - 0.385537f) / 0.2471896f) - 0.052272f) / 5.555556f : (p_G - 0.092809f) / 5.367655f;
+    
+    const float lb = p_B > 0.1496582f ? (_powf(10.0f, (p_B - 0.385537f) / 0.2471896f) - 0.052272f) / 5.555556f : (p_B - 0.092809f) / 5.367655f;
+
+   // Alexa Wide Gamut to Rec.709 primaries
+
+    const float mr = (lr * 1.617523f) + (lg * -0.537287f) + (lb * -0.080237f);
+
+    const float mg = (lr * -0.070573f) + (lg * 1.334613f) + (lb * -0.26404f);
+
+    const float mb = (lr * -0.021102f) + (lg * -0.226954f) + (lb * 1.248056f);
+    
+    // Lin to LogC
+    
+    const float Lr = mr > 0.010591f ? 0.247190f * _log10f(5.555556f * mr + 0.052272f) + 0.385537f : 5.367655f * mr + 0.092809f;
+    
+    const float Lg = mg > 0.010591f ? 0.247190f * _log10f(5.555556f * mg + 0.052272f) + 0.385537f : 5.367655f * mg + 0.092809f;
+    
+    const float Lb = mb > 0.010591f ? 0.247190f * _log10f(5.555556f * mb + 0.052272f) + 0.385537f : 5.367655f * mb + 0.092809f;
+    
+    // HSL
+    
+    const float R = Lr;
+    const float G = Lg;
+    const float B = Lb;
+    
+	const float Min = _fminf(R, _fminf(G, B));    
+	const float Max = _fmaxf(R, _fmaxf(G, B));    
+	const float del_Max = Max - Min;             
+
+    const float L = (Max + Min) / 2.0f;
+	const float s = del_Max == 0.0f ? 0.0f : (L < 0.5f ? del_Max / (Max + Min) : del_Max / (2.0f - Max - Min));
+	
+    const float del_R = (((Max - R) / 6.0f) + (del_Max / 2.0f)) / del_Max;
+    const float del_G = (((Max - G) / 6.0f) + (del_Max / 2.0f)) / del_Max;
+    const float del_B = (((Max - B) / 6.0f) + (del_Max / 2.0f)) / del_Max;
+   
+    const float h = del_Max == 0.0f ? 0.0f : (R == Max ? del_B - del_G : (G == Max ? (1.0f / 3.0f) + del_R - del_B : (2.0f / 3.0f) + del_G - del_R));
+
+    const float H = h < 0.0f ? h + 1.0f : (h > 1.0f ? h - 1.0f : h);
+    
+    
+    // Soft Clip Saturation
+
+    const float softsat = 0.15f;
+
+    const float S = s > softsat ? (-1.0f / ((s - softsat) / (1.0f - softsat) + 1.0f) + 1.0f) * (1.0f - softsat) + softsat : s;
+
+
+    const float Q = (L < 0.5f) ? (L * (1.0f + S)) : (L + S - L * S);
+    const float P = (2.0f * L - Q);
+
+    const float RH = ((H + 1.0f / 3.0f) < 0.0f) ? ((H + 1.0f / 3.0f) + 1.0f) :
+    (((H + 1.0f / 3.0f) > 1.0f) ? ((H + 1.0f / 3.0f) - 1.0f) : (H + 1.0f / 3.0f));
+    
+    const float RR = (RH < 1.0f / 6.0f) ? (P + (Q - P) * 6.0f * RH) : 
+    ((RH < 1.0f / 2.0f) ? Q : ((RH < 2.0f / 3.0f) 
+    ? (P + (Q - P) * (2.0f / 3.0f - RH) * 6.0f) : P));
+
+    const float GH = (H < 0.0f) ? (H + 1.0f) :
+    ((H > 1.0f) ? (H - 1.0f) : H);
+
+    const float GG = (GH < 1.0f / 6.0f) ? (P + (Q - P) * 6.0f * GH) :
+    ((GH < 1.0f / 2.0f) ? Q :
+    ((GH < 2.0f / 3.0f) ? (P + (Q - P) * (2.0f / 3.0f - GH) * 6.0f) : P));
+
+    const float BH = ((H - 1.0f / 3.0f) < 0.0f) ? ((H - 1.0f / 3.0f) + 1.0f) :
+    (((H - 1.0f / 3.0f) > 1.0f) ? ((H - 1.0f / 3.0f) - 1.0f) : (H - 1.0f / 3.0f));
+    
+    const float BB = (BH < 1.0f / 6.0f) ? (P + (Q - P) * 6.0f * BH) :
+    ((BH < 1.0f / 2.0f) ? Q :
+    ((BH < 2.0f / 3.0f) ? (P + (Q - P) * (2.0f / 3.0f - BH) * 6.0f) : P));
+    
+    
+    const float Rr = S == 0.0f ? L : RR;
+    const float Gg = S == 0.0f ? L : GG;
+    const float Bb = S == 0.0f ? L : BB;
+
+    
+    
+    // Euler's Constant e = 2.718281828459045
+    
+    const float e = 2.718281828459045;
+    
+    // Default expression : 1.0f / (1.0f + _powf(e, -8.9f*(r - 0.435f)))
+    
+    const float k = 1.0f;    // Curve peak value
+    
+    const float m = -8.9f;   // S-curve control
+    
+    const float n = 0.435f;  // Pivot point
+    
+    // Logistic Function (Sigmoid Curve)
+    
+    const float r = k / (1.0f + _powf(e, m*(Rr - n)));
+    
+    const float g = k / (1.0f + _powf(e, m*(Gg - n)));
+    
+    const float b = k / (1.0f + _powf(e, m*(Bb - n)));
+    
+        
+    return make_float3(r, g, b);
+}

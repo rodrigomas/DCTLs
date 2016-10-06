@@ -1,21 +1,28 @@
-// RGB to HSL
-
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
 {
-    const float Mx = _fmaxf(p_R, _fmaxf(p_G, p_B));			
-    const float mn = _fminf(p_R, _fminf(p_G, p_B));					
-    const float C = (Mx) - (mn);																
-    const float L = 0.5f * ((Mx) + (mn));													
-    const float S = (C) == 0.0f ? 0.0f : (C) / (1.0f - (2.0f * (L) - 1.0f));	
+    const float R = p_R;
+    const float G = p_G;
+    const float B = p_B;
     
-    const float H = ((Mx) == p_R ? ((p_G - p_B) / (C))  
-    + (p_G < p_B ? 6.0f : 0.0f) : ((Mx) == 
-    p_G ? 2.0f + ((p_B - p_R) / (C)) : 4.0f + ((p_R
-    - p_G) / (C)))) / 6.0f;
-    
-    const float r = (H);
-    const float g = (S);
-    const float b = (L);
-    
+	const float Min = _fminf(R, _fminf(G, B));    
+	const float Max = _fmaxf(R, _fmaxf(G, B));    
+	const float del_Max = Max - Min;             
+
+	const float L = (Max + Min) / 2.0f;
+	const float S = del_Max == 0.0f ? 0.0f : (L < 0.5f ? del_Max / (Max + Min) : del_Max / (2.0f - Max - Min));
+
+	
+   const float del_R = (((Max - R) / 6.0f) + (del_Max / 2.0f)) / del_Max;
+   const float del_G = (((Max - G) / 6.0f) + (del_Max / 2.0f)) / del_Max;
+   const float del_B = (((Max - B) / 6.0f) + (del_Max / 2.0f)) / del_Max;
+   
+   const float h = del_Max == 0.0f ? 0.0f : (R == Max ? del_B - del_G : (G == Max ? (1.0f / 3.0f) + del_R - del_B : (2.0f / 3.0f) + del_G - del_R));
+
+   const float H = h < 0.0f ? h + 1.0f : (h > 1.0f ? h - 1.0f : h);
+
+    const float r = H;
+    const float g = S;
+    const float b = L;
+
     return make_float3(r, g, b);
 }
