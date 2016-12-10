@@ -2,15 +2,14 @@
 // Driven by saturation levels
 // Original saturation preserved (perceived saturation may increase)
 
-
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
 {
 
 float MxA = _fmaxf(p_R, _fmaxf(p_G, p_B));			
 float mnA = _fminf(p_R, _fminf(p_G, p_B));					
-float CA = (MxA) - (mnA);																
-float LA = 0.5f * ((MxA) + (mnA));												
-float SA = (CA) == 0.0f ? 0.0f : (CA) / (1.0f - (2.0f * (LA) - 1.0f));	
+float CA = MxA - mnA;																
+float LA = 0.5f * (MxA + mnA);												
+float SA = LA <= 0.5f ? CA / (MxA + mnA) : CA / (2.0f - CA);	
 
 float R = p_R < p_B && p_G <= p_B ? p_R * ((p_R + 0.0001f) / ((p_B + p_G + 0.0001f) / 2.0f)) : p_R;
 float G = p_R < p_B && p_G <= p_B ? p_G * ((p_R + 0.0001f) / ((p_B + p_G + 0.0001f) / 2.0f)) : p_G;
@@ -18,14 +17,21 @@ float B = p_R < p_B && p_G <= p_B ? p_B * ((p_R + 0.0001f) / ((p_B + p_G + 0.000
 
 float MxB = _fmaxf(R, _fmaxf(G, B));			
 float mnB = _fminf(R, _fminf(G, B));					
-float CB = (MxB) - (mnB);																
-float LB = 0.5f * ((MxB) + (mnB));													
-    
-float HB = ((MxB) == R ? ((G - B) / (CB)) + (G < B ? 6.0f : 0.0f) : ((MxB) == G ? 2.0f + ((B - R) / (CB)) : 4.0f + ((R - G) / (CB)))) / 6.0f;
+float CB = MxB - mnB;																
+float LB = 0.5f * (MxB + mnB);	
+float SB = LB <= 0.5f ? CB / (MxB + mnB) : CB / (2.0f - CB);
 
+float del_R = (((MxB - R) / 6.0f) + (CB / 2.0f)) / CB;
+float del_G = (((MxB - G) / 6.0f) + (CB / 2.0f)) / CB;
+float del_B = (((MxB - B) / 6.0f) + (CB / 2.0f)) / CB;
+   
+float hh = CB == 0.0f ? 0.0f : (R == MxB ? del_B - del_G : (G == MxB ? (1.0f / 3.0f) + del_R - del_B : (2.0f / 3.0f) + del_G - del_R));
+
+float HB = hh < 0.0f ? hh + 1.0f : (hh > 1.0f ? hh - 1.0f : hh);
+												
 
 float h = HB;
-float s = SA;
+float s = p_R < p_B && p_G <= p_B ? SA : SB;
 float l = LB;
  
 float q = ((l) < 0.5f) ? ((l) * (1.0f + (s))) : ((l) + (s) - (l) * (s));
@@ -49,6 +55,6 @@ const float g = (s) == 0.0f ? (l) : (gg);
 const float b = (s) == 0.0f ? (l) : (bb);
 
 
-return make_float3(r, g, b);
 
+return make_float3(r, g, b);
 }
