@@ -1,0 +1,43 @@
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+    
+	// switches for display matte, invert alpha
+	int displaymatte = 1;
+	bool DisplayMatte = displaymatte == 1;
+	int invertalpha = 0;
+	bool InvertAlpha = invertalpha == 1;
+
+	float Mx = _fmaxf(p_R, _fmaxf(p_G, p_B));				
+	float mn = _fminf(p_R, _fminf(p_G, p_B));	 		
+	float del_Max = Mx - mn;
+												
+	float Ls = 0.5f * (Mx + mn);													
+
+	float Ss = del_Max == 0.0f ? 0.0f : del_Max / (1.0f - (2.0f * Ls - 1.0f));
+
+	// matte parameter values
+	float high = 1.0f;
+	float highfade = 1.0f;
+	float lowfade = 1.0f;
+	float low = 0.0f;
+	float highfadecurve = 1.0f;
+	float lowfadecurve = 1.0f;
+	float offset = 0.0f;
+	float mix = 0.0f;
+
+	float Sss = Ss == 0.0f ? 0.0f : Ss + offset;						
+	float Saturation = Sss < 0.0f ? 0.0f : (Sss > 1.0f ? 1.0f : Sss);
+
+	float highalpha = high + Saturation == 0.0f ? 0.0f : high - (1.0f - highfade) >= Saturation ? 1.0f : (high >= Saturation ? _powf((high - Saturation) / (1.0f - highfade), highfadecurve) : 0.0f);
+	float lowalpha = low + Saturation == 2.0f ? 0.0f : low + lowfade <= Saturation ? 1.0f : (low <= Saturation ? _powf((Saturation - low) / lowfade, lowfadecurve) : 0.0f);
+	float alpha = highalpha * lowalpha;
+	float alphaM = alpha + (1.0f - alpha) * mix;
+	float alphaV = InvertAlpha ? 1.0f - alphaM : alphaM;
+
+	float r = DisplayMatte ? alphaV : p_R;
+	float g = DisplayMatte ? alphaV : p_G;
+	float b = DisplayMatte ? alphaV : p_B;
+
+
+	return make_float3(r, g, b);
+}

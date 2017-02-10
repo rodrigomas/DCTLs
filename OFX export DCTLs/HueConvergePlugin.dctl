@@ -1,0 +1,151 @@
+// HueConvergePlugin export DCTL
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+			// switches for logistic, saturation, and hues
+    		int switchA = 1;
+    		bool p_SwitchA = switchA == 1;
+    		int switchB = 1;
+    		bool p_SwitchB = switchB == 1;
+    		int switchC = 1;
+    		bool p_SwitchC = switchC == 1;
+    		int switchD = 1;
+    		bool p_SwitchD = switchD == 1;
+    		int switchE = 1;
+    		bool p_SwitchE = switchE == 1;
+    		
+    		// logistic parameters peak, curve, pivot, offset
+    		float p_LogA = 1.0f;
+    		float p_LogB = 1.0f;
+    		float p_LogC = 0.435f;
+    		float p_LogD = 0.0f;
+    		
+    		// saturation parameters sat, soft-clip, blend
+    		float p_SatA = 1.0f;
+    		float p_SatB = 1.0f;
+    		float p_SatC = 0.0f;
+    		
+    		// hue anchor values
+    		float p_HueA = 0.084f;
+    		float p_HueB = 0.584f;
+    		float p_HueC = 0.333f;
+    		
+    		// hue converge parameters range, power, sat influence, power
+    		float p_HueR1 = 0.2f;
+    		float p_HueP1 = 1.0f;
+    		float p_HueSH1 = 0.0f;
+    		float p_HueSHP1 = 1.0f;
+    		
+    		float p_HueR2 = 0.2f;
+    		float p_HueP2 = 1.0f;
+    		float p_HueSH2 = 0.0f;
+    		float p_HueSHP2 = 1.0f;
+    		
+    		float p_HueR3 = 0.2f;
+    		float p_HueP3 = 1.0f;
+    		float p_HueSH3 = 0.0f;
+    		float p_HueSHP3 = 1.0f;
+    		
+    		
+    		// Euler's Constant e = 2.718281828459045
+    		float e = 2.718281828459045;
+    
+  		    // Default expression : 1.0f / (1.0f + _powf(e, -8.9f*(r - 0.435f)))
+   		    // Logistic Function (Sigmoid Curve)
+   		    
+   		    float Lr = p_SwitchA ? p_LogA / (1.0f + _powf(e, (-8.9f * p_LogB) * (p_R - p_LogC))) + p_LogD : p_R;
+   		    float Lg = p_SwitchA ? p_LogA / (1.0f + _powf(e, (-8.9f * p_LogB) * (p_G - p_LogC))) + p_LogD : p_G;
+   		    float Lb = p_SwitchA ? p_LogA / (1.0f + _powf(e, (-8.9f * p_LogB) * (p_B - p_LogC))) + p_LogD : p_B; 
+
+			float mn = _fminf(Lr, _fminf(Lg, Lb));    
+			float Mx = _fmaxf(Lr, _fmaxf(Lg, Lb));    
+			float del_Mx = Mx - mn;
+			
+            float L = (Mx + mn) / 2.0;
+			float luma = p_R * 0.2126f + p_G * 0.7152f + p_B * 0.0722f;
+			float Sat = del_Mx == 0.0f ? 0.0f : L < 0.5f ? del_Mx / (Mx + mn) : del_Mx / (2.0f - Mx - mn);
+
+			float del_R = ((Mx - Lr) / 6.0f + del_Mx / 2.0f) / del_Mx;
+    		float del_G = ((Mx - Lg) / 6.0f + del_Mx / 2.0f) / del_Mx;
+   			float del_B = ((Mx - Lb) / 6.0f + del_Mx / 2.0f) / del_Mx;
+   
+    		float h = del_Mx == 0.0f ? 0.0f : Lr == Mx ? del_B - del_G : Lg == Mx ? 1.0f / 3.0f + 
+    		del_R - del_B : 2.0f / 3.0f + del_G - del_R;
+
+    		float Hh = h < 0.0f ? h + 1.0f : h > 1.0f ? h - 1.0f : h;
+   		    
+   		    // Soft Clip Saturation
+
+			float s = Sat * p_SatA > 1.0f ? 1.0f : Sat * p_SatA;
+			float ss = s > p_SatB ? (-1.0f / ((s - p_SatB) / (1.0f - p_SatB) + 1.0f) + 1.0f) * (1.0f - p_SatB) + p_SatB : s;
+            float satAlphaA = p_SatC > 1.0f ? luma + (1.0f - p_SatC) * (1.0f - luma) : p_SatC >= 0.0f ? (luma >= p_SatC ? 1.0f : 
+			luma / p_SatC) : p_SatC < -1.0f ? (1.0f - luma) + (p_SatC + 1.0f) * luma : luma <= (1.0f + p_SatC) ? 1.0f : 
+            (1.0f - luma) / (1.0f - (p_SatC + 1.0f));
+            float satAlpha = satAlphaA > 1.0f ? 1.0f : satAlphaA;
+
+            float S = p_SwitchB ? ss * satAlpha + s * (1.0f - satAlpha) : Sat;
+
+			// Hue Convergence
+
+			float h1 = Hh - (p_HueA - 0.5f) < 0.0 ? Hh - (p_HueA - 0.5f) + 1.0f : Hh - (p_HueA - 0.5f) >
+            1.0f ? Hh - (p_HueA - 0.5f) - 1.0f : Hh - (p_HueA - 0.5f);
+
+			float Hs1 = p_HueSHP1 >= 1.0f ? 1.0f - _powf(1.0f - S, p_HueSHP1) : _powf(S, 1.0f/p_HueSHP1);
+			float cv1 = 1.0f + (p_HueP1 - 1.0f) * Hs1;
+			float curve1 = p_HueP1 + (cv1 - p_HueP1) * p_HueSH1;
+			
+			float H1 = !p_SwitchC ? Hh : h1 > 0.5f - p_HueR1 && h1 < 0.5f ? (1.0f - _powf(1.0f - (h1 - (0.5f - p_HueR1)) * 
+			(1.0f/p_HueR1), curve1)) * p_HueR1 + (0.5f - p_HueR1) + (p_HueA - 0.5f) : h1 > 0.5f && h1 < 0.5f + 
+			p_HueR1 ? _powf((h1 - 0.5f) * (1.0f/p_HueR1), curve1) * p_HueR1 + 0.5f + (p_HueA - 0.5f) : Hh;
+			
+   		    float h2 = H1 - (p_HueB - 0.5f) < 0.0f ? H1 - (p_HueB - 0.5f) + 1.0f : H1 - (p_HueB - 0.5f) > 
+            1.0f ? H1 - (p_HueB - 0.5f) - 1.0f : H1 - (p_HueB - 0.5f);
+   		    
+   		    float Hs2 = p_HueSHP2 >= 1.0f ? 1.0f - _powf(1.0f - S, p_HueSHP2) : _powf(S, 1.0f/p_HueSHP2);
+			float cv2 = 1.0f + (p_HueP2 - 1.0f) * Hs2;
+			float curve2 = p_HueP2 + (cv2 - p_HueP2) * p_HueSH2;
+   		    
+   		    float H2 = !p_SwitchD ? H1 : h2 > 0.5f - p_HueR2 && h2 < 0.5f ? (1.0f - _powf(1.0f - (h2 - (0.5f - p_HueR2)) * 
+            (1.0f/p_HueR2), curve2)) * p_HueR2 + (0.5f - p_HueR2) + (p_HueB - 0.5f) : h2 > 0.5f && h2 < 0.5f + 
+            p_HueR2 ? _powf((h2 - 0.5f) * (1.0f/p_HueR2), curve2) * p_HueR2 + 0.5f + (p_HueB - 0.5f) : H1;
+   		    
+   		    float h3 = H2 - (p_HueC - 0.5f) < 0.0f ? H2 - (p_HueC - 0.5f) + 1.0f : H2 - (p_HueC - 0.5f) > 
+            1.0f ? H2 - (p_HueC - 0.5f) - 1.0f : H2 - (p_HueC - 0.5f);
+   		    
+   		    float Hs3 = p_HueSHP3 >= 1.0f ? 1.0f - _powf(1.0f - S, p_HueSHP3) : _powf(S, 1.0f/p_HueSHP3);
+			float cv3 = 1.0f + (p_HueP3 - 1.0f) * Hs3;
+			float curve3 = p_HueP3 + (cv3 - p_HueP3) * p_HueSH3;
+   		    
+   		    float H = !p_SwitchE ? H2 : h3 > 0.5f - p_HueR3 && h3 < 0.5f ? (1.0f - _powf(1.0f - (h3 - (0.5f - p_HueR3)) * 
+   		    (1.0f/p_HueR3), curve3)) * p_HueR3 + (0.5f - p_HueR3) + (p_HueC - 0.5f) : h3 > 0.5f && h3 < 0.5f + 
+   		    p_HueR3 ? _powf((h3 - 0.5f) * (1.0f/p_HueR3), curve3) * p_HueR3 + 0.5f + (p_HueC - 0.5f) : H2;
+   		    
+   		    // HSL to RGB
+
+			float Q = L < 0.5f ? L * (1.0f + S) : L + S - L * S;
+			float P = 2.0f * L - Q;
+
+			float RH = H + 1.0f / 3.0f < 0.0f ? H + 1.0f / 3.0f + 1.0f :
+			H + 1.0f / 3.0f > 1.0f ? H + 1.0f / 3.0f - 1.0f : H + 1.0f / 3.0f;
+	
+			float RR = RH < 1.0f / 6.0f ? P + (Q - P) * 6.0f * RH : 
+			RH < 1.0f / 2.0f ? Q : RH < 2.0f / 3.0f ? P + (Q - P) * (2.0f / 3.0f - RH) * 6.0f : P;
+
+			float GH = H < 0.0f ? H + 1.0f :
+			H > 1.0f ? H - 1.0f : H;
+
+			float GG = GH < 1.0f / 6.0f ? P + (Q - P) * 6.0f * GH :
+			GH < 1.0f / 2.0f ? Q : GH < 2.0f / 3.0f ? P + (Q - P) * (2.0f / 3.0f - GH) * 6.0f : P;
+
+			float BH = H - 1.0f / 3.0f < 0.0f ? H - 1.0f / 3.0f + 1.0f :
+			H - 1.0f / 3.0f > 1.0f ? H - 1.0f / 3.0f - 1.0f : H - 1.0f / 3.0f;
+	
+		    float BB = BH < 1.0f / 6.0f ? P + (Q - P) * 6.0f * BH :
+			BH < 1.0f / 2.0f ? Q : BH < 2.0f / 3.0f ? P + (Q - P) * (2.0f / 3.0f - BH) * 6.0f : P;  
+            
+			const float r = S == 0.0f ? L : RR;
+			const float g = S == 0.0f ? L : GG;
+			const float b = S == 0.0f ? L : BB;
+
+    		return make_float3(r, g, b);
+}

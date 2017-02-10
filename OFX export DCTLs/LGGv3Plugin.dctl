@@ -1,0 +1,80 @@
+// LGGv3Plugin export DCTL
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+    
+    // switches for overall, shadows, midtones, highlights
+	int switchO = 0;
+	int switchS = 0;
+	int switchM = 0;
+	int switchH = 0;
+	bool p_SwitchOverall = switchO == 1;
+	bool p_SwitchShadows = switchS == 1;
+	bool p_SwitchMidtones = switchM == 1;
+	bool p_SwitchHighlights = switchH == 1;
+	
+	// Parameter values lift, gamma, gain
+	float LiftOverall = 0.0f;
+	float GammaOverall = 2.0f;
+	float GainOverall = 1.0f;
+	
+	float LiftShadows = 0.0f;
+	float GammaShadows = 1.0f;
+	float GainShadows = 1.0f;
+	float ShadowsAreaA = 0.0f;
+	float ShadowsAreaB = 0.333f;
+	
+	float LiftMidtones = 0.0f;
+	float GammaMidtones = 1.0f;
+	float GainMidtones = 1.0f;
+	float MidtonesAreaA = 0.333f;
+	float MidtonesAreaB = 0.667f;
+	
+	float LiftHighlights = 0.0f;
+	float GammaHighlights = 1.0f;
+	float GainHighlights = 1.0f;
+	float HighlightsAreaA = 0.667f;
+	float HighlightsAreaB = 1.0f;	
+   
+	float ROalg = (p_R * GainOverall) + (LiftOverall * (1.0f - (p_R * GainOverall)));
+	float GOalg = (p_G * GainOverall) + (LiftOverall * (1.0f - (p_G * GainOverall)));
+	float BOalg = (p_B * GainOverall) + (LiftOverall * (1.0f - (p_B * GainOverall)));
+	
+	const float RO = !p_SwitchOverall ? _powf(ROalg, 1.0f/GammaOverall) : 1.0f - _powf(1.0f - ROalg, GammaOverall);
+	const float GO = !p_SwitchOverall ? _powf(GOalg, 1.0f/GammaOverall) : 1.0f - _powf(1.0f - GOalg, GammaOverall);
+	const float BO = !p_SwitchOverall ? _powf(BOalg, 1.0f/GammaOverall) : 1.0f - _powf(1.0f - BOalg, GammaOverall);
+  
+	float Rs = (((RO - ShadowsAreaA) / (ShadowsAreaB - ShadowsAreaA)) * GainShadows) + (LiftShadows * (1.0f - (RO - ShadowsAreaA) / (ShadowsAreaB - ShadowsAreaA)));
+	float RS = RO >= ShadowsAreaA && RO <= ShadowsAreaB ? ((!p_SwitchShadows ? _powf(Rs, 1.0f / GammaShadows) : 1.0f - _powf(1.0f - Rs, GammaShadows)) * (ShadowsAreaB - ShadowsAreaA)) + ShadowsAreaA : RO;
+	
+	float Gs = (((GO - ShadowsAreaA) / (ShadowsAreaB - ShadowsAreaA)) * GainShadows) + (LiftShadows * (1.0f - (GO - ShadowsAreaA) / (ShadowsAreaB - ShadowsAreaA)));
+	float GS = GO >= ShadowsAreaA && GO <= ShadowsAreaB ? ((!p_SwitchShadows ? _powf(Gs, 1.0f / GammaShadows) : 1.0f - _powf(1.0f - Gs, GammaShadows)) * (ShadowsAreaB - ShadowsAreaA)) + ShadowsAreaA : GO;
+	
+	float Bs = (((BO - ShadowsAreaA) / (ShadowsAreaB - ShadowsAreaA)) * GainShadows) + (LiftShadows * (1.0f - (BO - ShadowsAreaA) / (ShadowsAreaB - ShadowsAreaA)));
+	float BS = BO >= ShadowsAreaA && BO <= ShadowsAreaB ? ((!p_SwitchShadows ? _powf(Bs, 1.0f / GammaShadows) : 1.0f - _powf(1.0f - Bs, GammaShadows)) * (ShadowsAreaB - ShadowsAreaA)) + ShadowsAreaA : BO;
+	
+	float Rm = (((RS - MidtonesAreaA) / (MidtonesAreaB - MidtonesAreaA)) * GainMidtones) + (LiftMidtones * (1.0f - (RS - MidtonesAreaA) / (MidtonesAreaB - MidtonesAreaA)));
+	float RM = RS >= MidtonesAreaA && RS <= MidtonesAreaB ? ((!p_SwitchMidtones ? _powf(Rm, 1.0f / GammaMidtones) : 1.0f - _powf(1.0f - Rm, GammaMidtones)) * (MidtonesAreaB - MidtonesAreaA)) + MidtonesAreaA : RS;
+	
+	float Gm = (((GS - MidtonesAreaA) / (MidtonesAreaB - MidtonesAreaA)) * GainMidtones) + (LiftMidtones * (1.0f - (GS - MidtonesAreaA) / (MidtonesAreaB - MidtonesAreaA)));
+	float GM = GS >= MidtonesAreaA && GS <= MidtonesAreaB ? ((!p_SwitchMidtones ? _powf(Gm, 1.0f / GammaMidtones) : 1.0f - _powf(1.0f - Gm, GammaMidtones)) * (MidtonesAreaB - MidtonesAreaA)) + MidtonesAreaA : GS;
+	
+	float Bm = (((BS - MidtonesAreaA) / (MidtonesAreaB - MidtonesAreaA)) * GainMidtones) + (LiftMidtones * (1.0f - (BS - MidtonesAreaA) / (MidtonesAreaB - MidtonesAreaA)));
+	float BM = BS >= MidtonesAreaA && BS <= MidtonesAreaB ? ((!p_SwitchMidtones ? _powf(Bm, 1.0f / GammaMidtones) : 1.0f - _powf(1.0f - Bm, GammaMidtones)) * (MidtonesAreaB - MidtonesAreaA)) + MidtonesAreaA : BS;
+	
+	float Rh = (((RM - HighlightsAreaA) / (HighlightsAreaB - HighlightsAreaA)) * GainHighlights) + (LiftHighlights * (1.0f - (RM - HighlightsAreaA) / (HighlightsAreaB - HighlightsAreaA)));
+	float RH = RM >= HighlightsAreaA && RM <= HighlightsAreaB ? ((!p_SwitchHighlights ? _powf(Rh, 1.0f / GammaHighlights) : 1.0f - _powf(1.0f - Rh, GammaHighlights)) * (HighlightsAreaB - HighlightsAreaA)) + HighlightsAreaA : RM;
+	
+	float Gh = (((GM - HighlightsAreaA) / (HighlightsAreaB - HighlightsAreaA)) * GainHighlights) + (LiftHighlights * (1.0f - (GM - HighlightsAreaA) / (HighlightsAreaB - HighlightsAreaA)));
+	float GH = GM >= HighlightsAreaA && GM <= HighlightsAreaB ? ((!p_SwitchHighlights ? _powf(Gh, 1.0f / GammaHighlights) : 1.0f - _powf(1.0f - Gh, GammaHighlights)) * (HighlightsAreaB - HighlightsAreaA)) + HighlightsAreaA : GM;
+	
+	float Bh = (((BM - HighlightsAreaA) / (HighlightsAreaB - HighlightsAreaA)) * GainHighlights) + (LiftHighlights * (1.0f - (BM - HighlightsAreaA) / (HighlightsAreaB - HighlightsAreaA)));
+	float BH = BM >= HighlightsAreaA && BM <= HighlightsAreaB ? ((!p_SwitchHighlights ? _powf(Bh, 1.0f / GammaHighlights) : 1.0f - _powf(1.0f - Bh, GammaHighlights)) * (HighlightsAreaB - HighlightsAreaA)) + HighlightsAreaA : BM;
+	
+    
+    const float r = RH;
+    const float g = GH;
+    const float b = BH;
+
+    return make_float3(r, g, b);
+}

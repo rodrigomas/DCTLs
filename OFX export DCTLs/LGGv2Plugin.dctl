@@ -1,0 +1,43 @@
+// LGGv2Plugin export DCTL
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+    
+    
+    int switchA = 1;
+    bool p_SwitchA = switchA == 1;
+    
+    float p_Lift = 0.0f;
+    float p_LiftAnchor = 1.0f;
+    
+    float p_Gamma = 2.0f;
+    float p_GammaAreaA = 0.0f;
+    float p_GammaAreaB = 1.0f;
+    
+    float p_Gain = 1.0f;
+    float p_GainAnchor = 0.0f;
+    
+    float p_Offset = 0.0f;
+    
+    
+	float GR = p_R >= p_GainAnchor ? (p_R - p_GainAnchor) * p_Gain  + p_GainAnchor: p_R;
+	float LR = GR <= p_LiftAnchor ? (((GR / p_LiftAnchor) + (p_Lift * (1 - (GR / p_LiftAnchor)))) * p_LiftAnchor) + p_Offset: GR + p_Offset;
+	float Prl = LR >= p_GammaAreaA && LR <= p_GammaAreaB ? pow((LR - p_GammaAreaA) / (p_GammaAreaB - p_GammaAreaA), 1.0/p_Gamma) * (p_GammaAreaB - p_GammaAreaA) + p_GammaAreaA : LR;
+	float Pru = LR >= p_GammaAreaA && LR <= p_GammaAreaB ? (1.0 - pow(1.0 - (LR - p_GammaAreaA) / (p_GammaAreaB - p_GammaAreaA), p_Gamma)) * (p_GammaAreaB - p_GammaAreaA) + p_GammaAreaA : LR;
+	const float r = p_SwitchA ? Pru : Prl;
+
+	float GG = p_G >= p_GainAnchor ? (p_G - p_GainAnchor) * p_Gain  + p_GainAnchor: p_G;
+	float LG = GG <= p_LiftAnchor ? (((GG / p_LiftAnchor) + (p_Lift * (1 - (GG / p_LiftAnchor)))) * p_LiftAnchor) + p_Offset: GG + p_Offset;
+	float Pgl = LG >= p_GammaAreaA && LG <= p_GammaAreaB ? pow((LG - p_GammaAreaA) / (p_GammaAreaB - p_GammaAreaA), 1.0/p_Gamma) * (p_GammaAreaB - p_GammaAreaA) + p_GammaAreaA : LG;
+	float Pgu = LG >= p_GammaAreaA && LG <= p_GammaAreaB ? (1.0 - pow(1.0 - (LG - p_GammaAreaA) / (p_GammaAreaB - p_GammaAreaA), p_Gamma)) * (p_GammaAreaB - p_GammaAreaA) + p_GammaAreaA : LG;
+	const float g = p_SwitchA ? Pgu : Pgl;
+
+	float GB = p_B >= p_GainAnchor ? (p_B - p_GainAnchor) * p_Gain  + p_GainAnchor: p_B;
+	float LB = GB <= p_LiftAnchor ? (((GB / p_LiftAnchor) + (p_Lift * (1 - (GB / p_LiftAnchor)))) * p_LiftAnchor) + p_Offset: GB + p_Offset;
+	float Pbl = LB >= p_GammaAreaA && LB <= p_GammaAreaB ? pow((LB - p_GammaAreaA) / (p_GammaAreaB - p_GammaAreaA), 1.0/p_Gamma) * (p_GammaAreaB - p_GammaAreaA) + p_GammaAreaA : LB;
+	float Pbu = LB >= p_GammaAreaA && LB <= p_GammaAreaB ? (1.0 - pow(1.0 - (LB - p_GammaAreaA) / (p_GammaAreaB - p_GammaAreaA), p_Gamma)) * (p_GammaAreaB - p_GammaAreaA) + p_GammaAreaA : LB;
+	const float b = p_SwitchA ? Pbu : Pbl;
+ 
+	
+    return make_float3(r, g, b);
+}

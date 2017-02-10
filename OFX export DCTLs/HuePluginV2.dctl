@@ -1,0 +1,45 @@
+// HuePluginV2 export DCTL
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+    
+    // switches for display matte, invert alpha
+	int displaymatte = 1;
+	bool DisplayMatte = displaymatte == 1;
+	int invertalpha = 0;
+	bool InvertAlpha = invertalpha == 1;
+	
+    float Mx = _fmaxf(p_R, _fmaxf(p_G, p_B));				
+    float mn = _fminf(p_R, _fminf(p_G, p_B));	 
+	float del_Max = Mx - mn;
+	
+	float del_R = (((Mx - p_R) / 6.0f) + (del_Max / 2.0f)) / del_Max;
+    float del_G = (((Mx - p_G) / 6.0f) + (del_Max / 2.0f)) / del_Max;
+    float del_B = (((Mx - p_B) / 6.0f) + (del_Max / 2.0f)) / del_Max;
+   
+    float h = del_Max == 0.0f ? 0.0f : (p_R == Mx ? del_B - del_G : (p_G == Mx ? 
+    (1.0f / 3.0f) + del_R - del_B : (2.0f / 3.0f) + del_G - del_R));
+
+	// matte parameter values
+	float high = 1.0f;
+	float highfade = 1.0f;
+	float lowfade = 1.0f;
+	float low = 0.0f;
+	float highfadecurve = 1.0f;
+	float lowfadecurve = 1.0f;
+	float offset = 0.0f * -1.0f;
+	float mix = 0.0f;
+	
+	float Hue = h == 0.0 ? 0.0 : (h + offset > 1.0 ? h + offset - 1.0 : (h + offset < 0.0 ? 1.0 + h + offset : h + offset));
+	float highalpha = high + Hue == 0.0f ? 0.0f : high - (1.0f - highfade) >= Hue ? 1.0f : (high >= Hue ? _powf((high - Hue) / (1.0f - highfade), highfadecurve) : 0.0f);
+	float lowalpha = low + Hue == 2.0f ? 0.0f : low + lowfade <= Hue ? 1.0f : (low <= Hue ? _powf((Hue - low) / lowfade, lowfadecurve) : 0.0f);
+	float alpha = highalpha * lowalpha;
+	float alphaM = alpha + (1.0f - alpha) * mix;
+	float alphaV = InvertAlpha ? 1.0f - alphaM : alphaM;
+	
+	float r = DisplayMatte ? alphaV : p_R;
+	float g = DisplayMatte ? alphaV : p_G;
+	float b = DisplayMatte ? alphaV : p_B;
+
+    return make_float3(r, g, b);
+}

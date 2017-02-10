@@ -1,0 +1,17 @@
+// LiftGammaGainPlugin export DCTL
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+    	
+    	// Lift, Gamma, Gain, Offset
+    	float Lift = 0.0f;
+    	float Gamma = 2.0f;
+    	float Gain = 1.0f;
+    	float Offset = 0.0f;
+    	
+    	const float r = _powf(p_R * Gain + Lift * (1.0f - p_R * Gain) + Offset, 1.0f/Gamma);
+       	const float g = _powf(p_G * Gain + Lift * (1.0f - p_G * Gain) + Offset, 1.0f/Gamma);
+       	const float b = _powf(p_B * Gain + Lift * (1.0f - p_B * Gain) + Offset, 1.0f/Gamma);
+
+    	return make_float3(r, g, b);
+}
