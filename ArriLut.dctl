@@ -1,4 +1,4 @@
-// Arri Lut (LogC AWG to Lin to rec709 to logC to tonemap minus saturation)
+// Arri Lut (LogC AWG to Lin to rec709 to logC to tonemap)
 
 __DEVICE__ float logclin(float p_Channel) // logC to linear
 {
@@ -43,19 +43,10 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
 	
 	// logC tonemapped
 	
-	float R = logistic(logR);
-	float G = logistic(logG);
-	float B = logistic(logB);
+	float r = logistic(logR);
+	float g = logistic(logG);
+	float b = logistic(logB);
 	
-	// saturation roll-off in highlights
-	
-	float luma = 0.2126f*R + 0.7152f*G + 0.0722f*B;
-	float sat = 0.7f;
-	
-	float r = ((1.0f - sat) * luma + sat * R) * luma + R * (1.0f - luma);
-	float g = ((1.0f - sat) * luma + sat * G) * luma + G * (1.0f - luma);
-	float b = ((1.0f - sat) * luma + sat * B) * luma + B * (1.0f - luma);
-
     return make_float3(r, g, b);
 
 }
