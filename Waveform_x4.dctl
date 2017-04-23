@@ -1,0 +1,80 @@
+// Waveform 4 windows
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, __TEXTURE__ p_TexR, __TEXTURE__ p_TexG, __TEXTURE__ p_TexB)
+{
+    // Scale input signal to zoom into shadows (e.g. 2 equals x2 zoom) 
+    
+    float ZOOM = 0.5f;
+    
+    // Reduce the scan iterations to reduce the processing cost (but also the quality)
+    
+    int space = 4;
+    
+    float y = p_Y / (p_Height - 1.0f);
+    float x = p_X / (p_Width - 1.0f);
+	float colR = 0.0f;
+	float colR4 = 0.0f;
+	float colG = 0.0f;
+	float colG4 = 0.0f;
+	float colB = 0.0f;
+	float colB4 = 0.0f;
+	float lumR = 0.0f;
+	float lumR4 = 0.0f;
+	float lumG = 0.0f;
+	float lumG4 = 0.0f;
+	float lumB = 0.0f;
+    float lumB4 = 0.0f;
+    
+	for (int i = 0; i < p_Height; i+=space){
+	
+		lumR = _tex2D(p_TexR, p_X * 2, i);
+		lumR *= ZOOM;
+		lumR > 0.005f && lumR < (1.0f - y) * 1.005f && lumR + 0.005f > (1.0f - y) * 1.005f ? colR += 0.02f * space : colR;
+	}
+	
+	for (int i = 0; i < p_Height; i+=space){
+	
+		lumG = _tex2D(p_TexG, (p_X - p_Width/2)* 2, i);
+		lumG *= ZOOM;
+		lumG > 0.005f && lumG < (1.0f - y) * 1.005f && lumG + 0.005f > (1.0f - y) * 1.005f ? colG += 0.02f * space : colG;
+	}
+	
+	for (int i = 0; i < p_Height; i+=space){
+	
+		lumB = _tex2D(p_TexB, (p_X - p_Width/2)* 2, i);
+		lumB *= ZOOM;
+		lumB += 0.5f;
+		lumB > 0.5025f && lumB < (1.0f - y) * 1.005f && lumB + 0.005f > (1.0f - y) * 1.005f ? colB += 0.02f * space : colB;
+	}
+	
+	for (int i = 0; i < p_Height; i+=space){
+	
+		lumR4 = _tex2D(p_TexR, p_X * 2, i);
+		lumR4 *= ZOOM;
+		lumR4 += 0.5f;
+		lumR4 > 0.5025f && lumR4 < (1.0f - y) * 1.005f && lumR4 + 0.005f > (1.0f - y) * 1.005f ? colR4 += 0.02f * space : colR4;
+	}
+	
+	for (int i = 0; i < p_Height; i+=space){
+	
+		lumG4 = _tex2D(p_TexG, p_X * 2, i);
+		lumG4 *= ZOOM;
+		lumG4 += 0.5f;
+		lumG4 > 0.5025f && lumG4 < (1.0f - y) * 1.005f && lumG4 + 0.005f > (1.0f - y) * 1.005f ? colG4 += 0.02f * space : colG4;
+	}
+	
+	for (int i = 0; i < p_Height; i+=space){
+	
+		lumB4 = _tex2D(p_TexB, p_X * 2, i);
+		lumB4 *= ZOOM;
+		lumB4 += 0.5f;
+		lumB4 > 0.5025f && lumB4 < (1.0f - y) * 1.005f && lumB4 + 0.005f > (1.0f - y) * 1.005f ? colB4 += 0.02f * space : colB4;
+	}
+	
+	float r = x <= 0.5f ? (y >= 0.5f ? colR : colR4) : 0.0f;
+	float g = x <= 0.5f && y <= 0.5f ? colG4 : x >= 0.5f && y >= 0.5f ? colG : 0.0f;
+	float b = x <= 0.5f && y <= 0.5f ? colB4 : x >= 0.5f && y <= 0.5f ? colB : 0.0f;
+	
+
+    return make_float3(r, g, b);
+}
