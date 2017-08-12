@@ -4,7 +4,7 @@ __DEVICE__ float mean(float p_Table[], int m) {
 float temp = 0.0f;
 for(int i = 0; i < m; ++i) {
 temp += p_Table[i]; }
-return temp / m;
+return (temp / m);
 }
 
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, __TEXTURE__ p_TexR, __TEXTURE__ p_TexG, __TEXTURE__ p_TexB)
