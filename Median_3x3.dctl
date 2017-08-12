@@ -23,8 +23,9 @@ float colRGB[3];
 float TableR[area], TableG[area], TableB[area];
 
 for (int i = 0; i < area; ++i) {
-int xx = i > length - 1 ? _fmod(i, length/1.0f) - 1 : i - 1;
-int yy = _floor(i / (length/1.0f)) - 1;
+int offset = (length - 1) / 2;
+int xx = (i >= length ? _fmod(i, length/1.0f) : i) - offset;
+int yy = _floor(i / (length/1.0f)) - offset;
 TableR[i] = _tex2D(p_TexR, p_X + xx, p_Y + yy);
 TableG[i] = _tex2D(p_TexG, p_X + xx, p_Y + yy);
 TableB[i] = _tex2D(p_TexB, p_X + xx, p_Y + yy);

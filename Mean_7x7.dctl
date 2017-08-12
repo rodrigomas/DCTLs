@@ -1,15 +1,11 @@
-// Median 7x7
+// Mean 7x7
 
-__DEVICE__ float median(float p_Table[], int m) {
-float temp;
-int i, j;
-for(i = 0; i < m - 1; i++) {
-for(j = i + 1; j < m; j++) {
-if(p_Table[j] < p_Table[i]) {
-temp = p_Table[i];
-p_Table[i] = p_Table[j];
-p_Table[j] = temp; }}}
-return p_Table[(m - 1) / 2]; }
+__DEVICE__ float mean(float p_Table[], int m) {
+float temp = 0.0f;
+for(int i = 0; i < m; ++i) {
+temp += p_Table[i]; }
+return temp / m;
+}
 
 __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, __TEXTURE__ p_TexR, __TEXTURE__ p_TexG, __TEXTURE__ p_TexB)
 {
@@ -32,7 +28,7 @@ TableB[i] = _tex2D(p_TexB, p_X + xx, p_Y + yy);
 }
 
 for (int c = 0; c < 3; ++c) {
-colRGB[c] = c == 0 ? median(TableR, area) : c == 1 ? median(TableG, area) : median(TableB, area); 
+colRGB[c] = c == 0 ? mean(TableR, area) : c == 1 ? mean(TableG, area) : mean(TableB, area); 
 }
 
 return make_float3(colRGB[0], colRGB[1], colRGB[2]);
