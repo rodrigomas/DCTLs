@@ -1,4 +1,4 @@
-// Rec.709 Linear to Rec.2020 ST2084
+// Rec.709 Linear to Rec.2020 ST2084(OETF)
 
 __DEVICE__ float bt2084(float x) {
 float ST2084_M1 = 0.1593017578125f;
