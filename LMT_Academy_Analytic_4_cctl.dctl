@@ -1,7 +1,7 @@
 //   LMT_Academy_Analytic_4 by Scott Dyer (converted to DCTL from original CTL by Baldavenger)
 //
-//   Input is linear ACES2065-1
-//   Output is linear ACES2065-1
+//   Input is ACEScct AP1
+//   Output is ACEScct AP1
 
 __CONSTANT__ float X_BRK = 0.0078125f;
 __CONSTANT__ float Y_BRK = 0.155251141552511f;
@@ -148,7 +148,9 @@ aces.x = p_R;
 aces.y = p_G;
 aces.z = p_B;
 
-float3 a, b, out, blend;
+aces = ACEScct_to_ACES(aces);
+
+float3 a, b, blend;
 a = sat_adjust(aces, 0.9f);
 a = mult_f_f3(2.0f, a); 
 
@@ -161,8 +163,6 @@ b = ACES_to_ACEScct(b);
 
 blend = overlay_f3(a, b);
 
-out = ACEScct_to_ACES(blend);
-
-return out;
+return blend;
 
 }
